@@ -92,8 +92,6 @@ def answer_evaluation_node(state: InterviewState) -> dict:
         {"role": "user", "content": get_evaluation_prompt(user_answer, state["current_question"])}
     ]).content
     
-    print(f"[EVALUATION NODE] Generated evaluation (length={len(evaluation)}): {evaluation[:200]}...")
-    
     # Store evaluation in state for feedback node (as internal note, not shown to user)
     return {
         "evaluation": evaluation  # Temporary field for next node
@@ -115,7 +113,6 @@ def feedback_node(state: InterviewState) -> dict:
     is_last_question = state["question_count"] >= 6
     
     evaluation = state.get("evaluation", "")
-    print(f"[FEEDBACK NODE] Received evaluation (length={len(evaluation)}): {evaluation[:200] if evaluation else 'EMPTY!'}...")
     
     feedback = llm.invoke([
         {"role": "system", "content": system_prompt},
@@ -185,7 +182,6 @@ def closing_node(state: InterviewState) -> dict:
     asked_for_clarification = any(keyword in last_message for keyword in clarification_keywords)
     
     if asked_for_clarification:
-        print(f"[CLOSING NODE] Detected clarification request before closing")
         # Provide brief clarification + closing
         clarification_request = state["messages"][-1].content
         closing_prompt = f"""The candidate asked for clarification: "{clarification_request}"
@@ -201,7 +197,6 @@ Generate a closing message including:
 
 Keep it professional, constructive, and motivating. Total: 6-8 sentences."""
     else:
-        print(f"[CLOSING NODE] Normal closing (no clarification)")
         closing_prompt = get_closing_prompt(state["question_count"])
     
     closing = llm.invoke([
@@ -229,16 +224,12 @@ def route_entry(state: InterviewState) -> Literal["greeting", "answer_evaluation
         - Wants next question → question_generation
         - 6 questions done → closing
     """
-    print(f"[ROUTING] question_count={state.get('question_count', 0)}, awaiting_clarification={state.get('awaiting_clarification', False)}, is_complete={state.get('is_complete', False)}")
-    
     # First invocation
     if not state.get("messages") or len(state["messages"]) == 0:
-        print("[ROUTING] → greeting (first invocation)")
         return "greeting"
     
     # Check if interview is complete
     if state.get("is_complete"):
-        print("[ROUTING] → closing (is_complete=True)")
         return "closing"
     
     last_message = state["messages"][-1].content.lower()
@@ -249,7 +240,6 @@ def route_entry(state: InterviewState) -> Literal["greeting", "answer_evaluation
     
     # Special case: After question 6, clarification goes to closing_with_clarification
     if state["question_count"] >= 6 and wants_clarification:
-        print("[ROUTING] → closing (clarification request after question 6)")
         return "closing"
     
     # Check if 6 questions done and user wants to finish
@@ -258,31 +248,24 @@ def route_entry(state: InterviewState) -> Literal["greeting", "answer_evaluation
         wants_to_finish = any(keyword in last_message for keyword in finish_keywords)
         
         if wants_to_finish:
-            print("[ROUTING] → closing (user wants to finish after 6 questions)")
             return "closing"
     
     # Check if we're awaiting clarification decision
     if state.get("awaiting_clarification"):
-        print(f"[ROUTING] awaiting_clarification=True, last_message={last_message[:100]}...")
-        
         # Check if user wants clarification (already computed above)
         # clarification_keywords and wants_clarification already set
         
         if wants_clarification:
-            print("[ROUTING] → clarification (user wants clarification)")
             return "clarification"
         
         # Check if 6 questions done
         if state["question_count"] >= 6:
-            print("[ROUTING] → closing (6 questions completed)")
             return "closing"
         
         # User wants next question
-        print("[ROUTING] → question_generation (user wants next)")
         return "question_generation"
     
     # User answered a question, needs evaluation
-    print("[ROUTING] → answer_evaluation (user answered question)")
     return "answer_evaluation"
 
 

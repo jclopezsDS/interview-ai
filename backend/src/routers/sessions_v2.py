@@ -60,16 +60,9 @@ async def create_session(request: CreateSessionRequest) -> MessageResponse:
         # Get initial state (greeting + first question)
         session_data = manager.get_session(session_id)
         
-        # Debug
-        print(f"[DEBUG endpoint] Total messages: {len(session_data['messages'])}")
-        for i, msg in enumerate(session_data["messages"]):
-            print(f"[DEBUG endpoint] Message {i}: role={msg['role']}, content_len={len(msg['content'])}")
-        
         # Extract AI's initial message (greeting + question)
         ai_messages = [msg for msg in session_data["messages"] if msg["role"] == "assistant"]
-        print(f"[DEBUG endpoint] AI messages found: {len(ai_messages)}")
         ai_message = "\n\n".join([msg["content"] for msg in ai_messages])
-        print(f"[DEBUG endpoint] Final ai_message length: {len(ai_message)}")
         
         return MessageResponse(
             session_id=session_id,

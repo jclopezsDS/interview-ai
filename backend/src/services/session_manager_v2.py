@@ -110,7 +110,6 @@ class SessionManager:
             result = self._invoke_graph(session_id, user_message)
             return result
         except Exception as e:
-            print(f"[ERROR] Graph invocation failed for session {session_id}: {e}")
             raise RuntimeError(f"Failed to process message: {str(e)}")
     
     def get_session(self, session_id: str) -> Optional[Dict]:
@@ -132,11 +131,6 @@ class SessionManager:
         
         # Get current state from graph
         state = graph.get_state({"configurable": {"thread_id": thread_id}})
-        
-        # Debug
-        print(f"[DEBUG get_session] state.values type: {type(state.values)}")
-        print(f"[DEBUG get_session] state.values keys: {state.values.keys() if hasattr(state.values, 'keys') else 'not a dict'}")
-        print(f"[DEBUG get_session] messages in state: {len(state.values.get('messages', []))}")
         
         return {
             **session["metadata"],
@@ -216,16 +210,11 @@ class SessionManager:
             config={"configurable": {"thread_id": thread_id}}
         )
         
-        # Debug: print result structure
-        print(f"[DEBUG] Graph result keys: {result.keys() if hasattr(result, 'keys') else 'not a dict'}")
-        print(f"[DEBUG] Messages in result: {len(result.get('messages', []))} messages")
-        
         # Extract AI response (last message)
         ai_message = ""
         if result.get("messages"):
             last_msg = result["messages"][-1]
             ai_message = last_msg.content if hasattr(last_msg, 'content') else str(last_msg)
-            print(f"[DEBUG] Extracted AI message length: {len(ai_message)}")
         
         return {
             "session_id": session_id,

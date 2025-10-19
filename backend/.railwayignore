@@ -1,0 +1,39 @@
+# Exclude notebooks from Railway builds
+notebooks/
+*.ipynb
+
+# Exclude development files
+.env
+.env.local
+.env.development
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Exclude tests
+tests/
+test_*.py
+*_test.py
+
+# Exclude docs
+docs/
+*.md
+!README.md
+
+# Exclude IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Exclude git
+.git/
+.gitignore

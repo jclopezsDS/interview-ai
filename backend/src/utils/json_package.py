@@ -38,7 +38,6 @@ def export_json_utilities(
     Returns:
         Dict[str, Any]: Complete JSON utilities package
     """
-    print(f"[EXPORT] Creating production JSON utilities package")
     def validate_json_structure_wrapper(data: Dict[str, Any], schema_type: str) -> Dict[str, Any]:
         """Validate JSON data against schemas."""
         if schema_type == "question":
@@ -72,7 +71,6 @@ def export_json_utilities(
         }
     }
     
-    print(f"[EXPORT] JSON utilities package created with {len(json_utilities['pipeline'])} functions")
     return json_utilities
 
 
