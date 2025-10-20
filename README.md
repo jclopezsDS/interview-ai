@@ -8,9 +8,6 @@
 ![LangGraph](https://img.shields.io/badge/LangGraph-AI%20Orchestration-purple.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-**Live Demo**: [Coming soon]  
-**API Docs**: [Coming soon]
-
 ---
 
 ## ✨ Features
@@ -21,6 +18,13 @@
 - **Configurable Difficulty** - Beginner, Intermediate, Advanced
 - **6-Question Flow** - Structured interview with overall summary
 - **Professional UI** - Dark mode, responsive, mobile-friendly
+
+---
+
+## 🌐 Live Demo
+
+**Frontend**: https://interview-app-frontend-mu.vercel.app/  
+**Backend API**: https://interview-ai-production-7e11.up.railway.app/
 
 ---
 
@@ -89,9 +93,8 @@ The `backend/notebooks/` directory contains exploration and prototyping work:
 
 ## 🚢 Deployment
 
-See `DEPLOYMENT_PLAN.md` for complete instructions.
-
-**Stack**: Railway (backend) + Vercel (frontend)
+**Backend**: Railway → https://interview-ai-production-7e11.up.railway.app/  
+**Frontend**: Vercel → https://interview-app-frontend-mu.vercel.app/
 
 ---
 
@@ -105,7 +108,3 @@ MIT License
 
 **Julian López**  
 GitHub: [@jclopezsDS](https://github.com/jclopezsDS)
-
----
-
-**⭐ Star this repo if you find it useful!**
