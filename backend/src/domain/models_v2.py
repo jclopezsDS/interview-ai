@@ -4,8 +4,13 @@ Pydantic schemas v2 for Interview Practice API.
 Defines request/response models for the LangGraph-based interview system.
 """
 from typing import Literal, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
+
+from src.security.validators import (
+    validate_job_description,
+    validate_user_input_text,
+)
 
 
 # ==================== Request Schemas ====================
@@ -38,6 +43,18 @@ class CreateSessionRequest(BaseModel):
         ...,
         description="Difficulty level of the interview"
     )
+    
+    @field_validator('job_description')
+    @classmethod
+    def validate_job_desc(cls, v: str) -> str:
+        """Validate job description for security."""
+        return validate_job_description(v)
+    
+    @field_validator('user_background')
+    @classmethod
+    def validate_user_bg(cls, v: str) -> str:
+        """Validate user background for security."""
+        return validate_user_input_text(v)
 
 
 class SendMessageRequest(BaseModel):
@@ -50,6 +67,12 @@ class SendMessageRequest(BaseModel):
         max_length=5000,
         examples=["I would use a dictionary to solve this problem because..."]
     )
+    
+    @field_validator('message')
+    @classmethod
+    def validate_msg(cls, v: str) -> str:
+        """Validate message for security."""
+        return validate_user_input_text(v)
 
 
 # ==================== Response Schemas ====================

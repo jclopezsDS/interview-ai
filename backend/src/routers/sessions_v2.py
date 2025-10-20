@@ -5,7 +5,7 @@ Endpoints for creating, managing, and interacting with interview sessions.
 Uses LangGraph-based interview system with in-memory storage.
 """
 from typing import List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from datetime import datetime
 
 from src.domain.models_v2 import (
@@ -17,6 +17,13 @@ from src.domain.models_v2 import (
     ErrorResponse
 )
 from src.services.session_manager_v2 import get_session_manager
+from src.security.prompt_guard import validate_user_input
+
+# Import limiter (will be initialized from app)
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 
 # ==================== Router Setup ====================
@@ -36,7 +43,8 @@ router = APIRouter(
     summary="Create new interview session",
     description="Initialize a new interview session with job description and candidate background. Returns greeting and first question."
 )
-async def create_session(request: CreateSessionRequest) -> MessageResponse:
+@limiter.limit("10/hour")
+async def create_session(req: CreateSessionRequest, request: Request) -> MessageResponse:
     """
     Create a new interview session.
     
@@ -48,13 +56,17 @@ async def create_session(request: CreateSessionRequest) -> MessageResponse:
     Returns the AI's greeting and first question.
     """
     try:
+        # Security: Check for prompt injection
+        validate_user_input(req.job_description)
+        validate_user_input(req.user_background)
+        
         manager = get_session_manager()
         
         session_id = manager.create_session(
-            job_description=request.job_description,
-            user_background=request.user_background,
-            interview_type=request.interview_type,
-            difficulty=request.difficulty
+            job_description=req.job_description,
+            user_background=req.user_background,
+            interview_type=req.interview_type,
+            difficulty=req.difficulty
         )
         
         # Get initial state (greeting + first question)
@@ -72,6 +84,18 @@ async def create_session(request: CreateSessionRequest) -> MessageResponse:
             timestamp=datetime.utcnow()
         )
     
+    except ValueError as e:
+        # Handle validation errors (e.g., prompt injection)
+        error_msg = str(e)
+        if "malicious" in error_msg.lower() or "injection" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_msg
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -85,7 +109,8 @@ async def create_session(request: CreateSessionRequest) -> MessageResponse:
     summary="Send message to session",
     description="Send user's answer/response to the interview session. Returns AI's evaluation, feedback, or next question."
 )
-async def send_message(session_id: str, request: SendMessageRequest) -> MessageResponse:
+@limiter.limit("60/hour")
+async def send_message(session_id: str, req: SendMessageRequest, request: Request) -> MessageResponse:
     """
     Send a message to an active interview session.
     
@@ -97,9 +122,12 @@ async def send_message(session_id: str, request: SendMessageRequest) -> MessageR
     - Close interview after 6 questions
     """
     try:
+        # Security: Check for prompt injection
+        validate_user_input(req.message)
+        
         manager = get_session_manager()
         
-        result = manager.send_message(session_id, request.message)
+        result = manager.send_message(session_id, req.message)
         
         return MessageResponse(
             session_id=result["session_id"],
@@ -110,9 +138,16 @@ async def send_message(session_id: str, request: SendMessageRequest) -> MessageR
         )
     
     except ValueError as e:
+        # Handle both validation errors and session errors
+        error_msg = str(e)
+        if "malicious" in error_msg.lower() or "injection" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+            detail=error_msg
         )
     except Exception as e:
         raise HTTPException(
